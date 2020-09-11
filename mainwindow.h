@@ -21,10 +21,11 @@ public:
 private:
     Ui::MainWindow *ui;
     QTimer timer;
-    QProcess proccess_svc("asku_svc");
+    QProcess process_ps;
 
 public slots:
-    void proccess();
+    void find_process_asku_svc();
+    void ps();
 
 
 
