@@ -35,6 +35,11 @@ void MainWindow::ps(){
         if(list_process[i].indexOf("asku-svc") != -1){
             asku_svc_process = list_process[i];
         }
+
     }
     qDebug() << asku_svc_process;
+    if(asku_svc_process == "not found"){
+        QProcess temp;
+        temp.startDetached("sudo service asku-svc start");
+    }
 }
