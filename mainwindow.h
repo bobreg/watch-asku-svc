@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QProcess>
 #include <QTimer>
+#include <QDateTime>
 #include <QDebug>
 
 namespace Ui {
@@ -22,10 +23,16 @@ private:
     Ui::MainWindow *ui;
     QTimer timer;
     QProcess process_ps;
+    QProcess restart_asku_svc;
+    unsigned short counter = 0;
+
+    QStringList list_process;
+    QString asku_svc_process = "not found";
 
 public slots:
     void find_process_asku_svc();
     void ps();
+    void ras();
 
 
 
