@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../build-check_asku_svc-gcc-Debug/bird.png</normaloff>../build-check_asku_svc-gcc-Debug/bird.png</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QPlainTextEdit" name="plainTextEdit">
     <property name="geometry">

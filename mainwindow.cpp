@@ -5,24 +5,39 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+// создаём форму
     ui->setupUi(this);
     ui->plainTextEdit->setStyleSheet("background-color: black;"
                                      "color: white");
+//  создаём таймеры и коннекты
     connect(&timer, SIGNAL(timeout()), this, SLOT(find_process_asku_svc()));
     timer.start(1000);
     connect(&process_ps, SIGNAL(readyReadStandardOutput()), this, SLOT(ps()));
     connect(&restart_asku_svc, SIGNAL(readyReadStandardOutput()), this, SLOT(ras()));
+//  создаём значёк в трее
+    tray.setIcon(QIcon("bird.png"));
+    tray.setToolTip(trUtf8("слежу за asku-svc!"));
+    tray.show();
+//  создаём меню для иконки в трее
+    show_w = new QAction(trUtf8("Показать окно"), this);
+    close_p = new QAction(trUtf8("Закрыть программу"), this);
+    tray_menu.addAction(show_w);
+    tray_menu.addAction(close_p);
+    connect(show_w, SIGNAL(triggered()), this, SLOT(show_window()));
+    connect(close_p, SIGNAL(triggered()), this, SLOT(close_program()));
+    tray.setContextMenu(&tray_menu);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete show_w;
+    delete close_p;
 }
 
 void MainWindow::find_process_asku_svc(){
     process_ps.start("ps", QStringList() << "-e");
 }
-
 
 void MainWindow::ps(){
     counter++;
@@ -45,11 +60,14 @@ void MainWindow::ps(){
     if(asku_svc_process == "not found"){
         msg.append("Process not found.\nTry restart...");
         restart_asku_svc.start("sudo service asku-svc start");
-
+        tray.showMessage(trUtf8("Во блин!"), trUtf8("asku-svc отвалилась. Перезапускаю"),
+                         QSystemTrayIcon::Warning, 3000);
         ui->plainTextEdit->appendPlainText(msg);
     }else{
         if(counter % 3600 == 1){
             msg.append("asku-svc is working.");
+            tray.showMessage(trUtf8("Всё норм."), trUtf8("asku-svc работает"),
+                             QSystemTrayIcon::Information, 3000);
             ui->plainTextEdit->appendPlainText(msg);
         }
     }
@@ -63,4 +81,12 @@ void MainWindow::ras(){
     temp = restart_asku_svc.readAllStandardOutput();
     ui->plainTextEdit->appendPlainText(temp);
     counter = 0;
+}
+
+void MainWindow::show_window(){
+    this->show();
+}
+
+void MainWindow::close_program(){
+    qApp->quit();
 }

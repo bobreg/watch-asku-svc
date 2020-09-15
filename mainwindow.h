@@ -6,6 +6,9 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QDebug>
+#include <QSystemTrayIcon>
+#include <QMenu>
+#include <QAction>
 
 namespace Ui {
 class MainWindow;
@@ -21,6 +24,12 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    QSystemTrayIcon tray;
+    QMenu tray_menu;
+    QAction *show_w;
+    QAction *close_p;
+
     QTimer timer;
     QProcess process_ps;
     QProcess restart_asku_svc;
@@ -33,7 +42,8 @@ public slots:
     void find_process_asku_svc();
     void ps();
     void ras();
-
+    void show_window();
+    void close_program();
 
 
 };
