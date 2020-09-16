@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-
+//------реализация класса меню трея-----
 ParrotTray::ParrotTray(){
     //  создаём значёк в трее
         tray.setIcon(QIcon("bird.png"));
@@ -23,14 +23,47 @@ ParrotTray::~ParrotTray(){
 }
 
 void ParrotTray::close_program(){
-    qApp->quit();
+    //qApp->quit();
+    InfMessage alarm;
 }
 
 
+//------реализация класса системного окна о закрытии программы------
+InfMessage::InfMessage(){
+    msb = new QMessageBox();
+    last_warning = new QMessageBox();
+    msb->setIcon(QMessageBox::Question);
+    msb->setWindowTitle(trUtf8("Уверены..."));
+    msb->setText(trUtf8("Закрытие приложения приведёт к "
+                        "прекращению слежения за важной "
+                        "частью программы АСКУ!"));
+    msb->setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+    answer = msb->exec();
+    delete msb;
+    if(answer == QMessageBox::Yes){
+        last_warning->setIcon(QMessageBox::Warning);
+        last_warning->setWindowTitle(trUtf8("Внимание!"));
+        last_warning->setText(trUtf8("Когда-нибудь всё сломается, но вы не поймёте "
+                                     "почему! И не вините потом АСКУ"));
+        last_warning->setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+        answer = last_warning->exec();
+        delete last_warning;
+        if(answer == QMessageBox::Yes){
+            qApp->quit();
+        }
+    }
+}
+
+
+//------реализация класса основного окна и основной логики программы-----
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    counter = 0;
+    asku_svc_process = "not found";
+    flag_file = false;
+    counter_attempt = 0;
 // создаём форму
     ui->setupUi(this);
     ui->plainTextEdit->setStyleSheet("background-color: black;"
@@ -40,10 +73,11 @@ MainWindow::MainWindow(QWidget *parent) :
     timer.start(1000);
     connect(&process_ps, SIGNAL(readyReadStandardOutput()), this, SLOT(ps()));
     connect(&restart_asku_svc, SIGNAL(readyReadStandardOutput()), this, SLOT(ras()));
-
     connect(tray.show_w, SIGNAL(triggered()), this, SLOT(show_window()));
-
-
+// проверка наличия необходимых файлов
+    if(QFile::exists("/opt/amcs-observer/asku-svc") and QFile::exists("/etc/init.d/asku-svc")){
+        flag_file = true;
+    }
 }
 
 MainWindow::~MainWindow()
@@ -52,10 +86,25 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::find_process_asku_svc(){
-    process_ps.start("ps", QStringList() << "-e");
+    if(flag_file == true){
+        process_ps.start("ps", QStringList() << "-e");
+    }else{
+        timer.stop();
+        QMessageBox *msg_critical = new QMessageBox(QMessageBox::Critical, trUtf8("Ошибка"),
+                                                    trUtf8("В системе не обнаружены файлы "
+                                                           "\"/etc/init.d/asku-svc\" и "
+                                                           "\"/opt/amcs-observer/asku-svc\"."
+                                                           "Программа не может быть запущена!"),
+                                                    QMessageBox::Yes);
+        int temp = msg_critical->exec();
+        delete msg_critical;
+        if(temp == QMessageBox::Yes){
+            qApp->quit();
+        }
+    }
 }
 
-void MainWindow::ps(){
+void MainWindow::ps(){  // основная логика (работает после запуска программы "ps")
     counter++;
     //qDebug() << counter;
     QString temp;
@@ -79,7 +128,23 @@ void MainWindow::ps(){
         tray.tray.showMessage(trUtf8("Во блин!"), trUtf8("asku-svc отвалилась. Перезапускаю"),
                          QSystemTrayIcon::Warning, 3000);
         ui->plainTextEdit->appendPlainText(msg);
+        counter_attempt++;
+        if(counter_attempt == MAX_ATTEMPTS){
+            timer.stop();
+            QMessageBox *msg_critical = new QMessageBox(QMessageBox::Critical, trUtf8("Ошибка"),
+                                                        trUtf8("Что-то не так! Превышено максимальное"
+                                                               "число попыток запуска. Проверьте"
+                                                               "программу АСКУ или обратитесь к "
+                                                               "кому-нибудь. Программа остановлена"),
+                                                        QMessageBox::Yes);
+            int temp = msg_critical->exec();
+            delete msg_critical;
+            if(temp == QMessageBox::Yes){
+                qApp->quit();
+            }
+        }
     }else{
+        counter_attempt = 0;
         if(counter % 3600 == 1){
             msg.append("asku-svc is working.");
             tray.tray.showMessage(trUtf8("Всё норм."), trUtf8("asku-svc работает"),

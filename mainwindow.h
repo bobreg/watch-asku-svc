@@ -9,6 +9,9 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QAction>
+#include <QMessageBox>
+
+#define MAX_ATTEMPTS 10
 
 namespace Ui {
 class MainWindow;
@@ -32,6 +35,17 @@ public slots:
 
 };
 
+class InfMessage : public QObject {
+    Q_OBJECT
+public:
+    InfMessage();
+private:
+    QMessageBox *msb;
+    QMessageBox *last_warning;
+    int answer;
+
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -48,19 +62,18 @@ private:
     QTimer timer;
     QProcess process_ps;
     QProcess restart_asku_svc;
-    unsigned short counter = 0;
+    unsigned short counter;
 
     QStringList list_process;
-    QString asku_svc_process = "not found";
+    QString asku_svc_process;
+    bool flag_file;
+    unsigned short counter_attempt;
 
 public slots:
     void find_process_asku_svc();
     void ps();
     void ras();
     void show_window();
-
-
-
 };
 
 #endif // MAINWINDOW_H
