@@ -14,6 +14,24 @@ namespace Ui {
 class MainWindow;
 }
 
+class ParrotTray : public QObject
+{
+        Q_OBJECT
+public:
+    ParrotTray();
+    ~ParrotTray();
+    QSystemTrayIcon tray;
+    QAction *show_w;
+private:
+    QMenu tray_menu;
+    QAction *close_p;
+
+public slots:
+    void close_program();
+
+
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -25,10 +43,7 @@ public:
 private:
     Ui::MainWindow *ui;
 
-    QSystemTrayIcon tray;
-    QMenu tray_menu;
-    QAction *show_w;
-    QAction *close_p;
+    ParrotTray tray;
 
     QTimer timer;
     QProcess process_ps;
@@ -43,7 +58,7 @@ public slots:
     void ps();
     void ras();
     void show_window();
-    void close_program();
+
 
 
 };
