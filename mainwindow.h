@@ -62,11 +62,13 @@ private:
     QTimer timer;
     QProcess process_ps;
     QProcess restart_asku_svc;
+    QProcess *check_copy;
     unsigned short counter;
 
     QStringList list_process;
     QString asku_svc_process;
     bool flag_file;
+    bool flag_copy;
     unsigned short counter_attempt;
 
 public slots:
@@ -74,6 +76,7 @@ public slots:
     void ps();
     void ras();
     void show_window();
+    void copy_is();
 };
 
 #endif // MAINWINDOW_H
