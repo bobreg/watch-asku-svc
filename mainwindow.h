@@ -35,17 +35,6 @@ public slots:
 
 };
 
-class InfMessage : public QObject {
-    Q_OBJECT
-public:
-    InfMessage();
-private:
-    QMessageBox *msb;
-    QMessageBox *last_warning;
-    int answer;
-
-};
-
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -58,7 +47,6 @@ private:
     Ui::MainWindow *ui;
 
     ParrotTray tray;
-
     QTimer timer;
     QProcess process_ps;
     QProcess restart_asku_svc;
