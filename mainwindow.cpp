@@ -60,19 +60,14 @@ void ParrotTray::close_program(){
     }
 }
 
-
-
-
-
 //------реализация класса основного окна и основной логики программы-----
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     counter = 0;
-    asku_svc_process = "not found";
     flag_file = false;
-    flag_copy = false;
+    count_copy_run = 0;
     counter_attempt = 0;
 // создаём форму
     ui->setupUi(this);
@@ -91,7 +86,7 @@ MainWindow::MainWindow(QWidget *parent) :
 // проверка на запуск ещё одной копии
     check_copy = new QProcess();
     connect(check_copy, SIGNAL(readyReadStandardOutput()), this, SLOT(copy_is()));
-    check_copy->start("ps -e | grep check_asku_svc");
+    check_copy->start("ps -e");
 }
 
 MainWindow::~MainWindow()
@@ -100,19 +95,31 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::find_process_asku_svc(){
-    if(flag_file == true){
+    if(flag_file == true and count_copy_run < 2){
         process_ps.start("ps", QStringList() << "-e");
     }else{
         timer.stop();
-        bool temp = msg_win(trUtf8("Ошибка"),
-                    trUtf8("В системе не обнаружены файлы "
-                           "\"/etc/init.d/asku-svc\" и "
-                           "\"/opt/amcs-observer/asku-svc\"."
-                           "Программа не может быть запущена!"),
-                    1,
-                    QMessageBox::Critical);
-        if(temp == true){
-            qApp->quit();
+        if(flag_file == false){
+            bool temp = msg_win(trUtf8("Ошибка"),
+                                trUtf8("В системе не обнаружены файлы "
+                                       "\"/etc/init.d/asku-svc\" и "
+                                       "\"/opt/amcs-observer/asku-svc\"."
+                                       "Программа не может быть запущена!"),
+                                1,
+                                QMessageBox::Critical);
+            if(temp == true){
+                qApp->quit();
+            }
+        }else if(count_copy_run > 1){
+            bool temp = msg_win(trUtf8("Ииии..."),
+                                trUtf8("Одна копия программы слежения за asku-svc "
+                                       "уже запущена!"),
+                                1,
+                                QMessageBox::Critical);
+
+            if(temp == true){
+                qApp->quit();
+            }
         }
     }
 }
@@ -124,7 +131,7 @@ void MainWindow::ps(){  // основная логика (работает по�
     QString msge = "";
     msge.append(QDateTime::currentDateTime().toString());
     msge.append(": ");
-    asku_svc_process = "not found";
+    QString asku_svc_process = "not found";
 
     temp = process_ps.readAllStandardOutput();
     list_process = temp.split("\n");
@@ -136,6 +143,7 @@ void MainWindow::ps(){  // основная логика (работает по�
     }
     //qDebug() << asku_svc_process;
     if(asku_svc_process == "not found"){
+        timer.setInterval(5000);
         msge.append("Process not found.\nTry restart...");
         restart_asku_svc.start("sudo service asku-svc start");
         tray.tray.showMessage(trUtf8("Во блин!"), trUtf8("asku-svc отвалилась. Перезапускаю"),
@@ -156,6 +164,7 @@ void MainWindow::ps(){  // основная логика (работает по�
             }
         }
     }else{
+        timer.setInterval(1000);
         counter_attempt = 0;
         if(counter % 3600 == 1){
             msge.append("asku-svc is working.");
@@ -182,9 +191,13 @@ void MainWindow::show_window(){
 
 void MainWindow::copy_is(){
     QString temp = "";
+    QString asku_svc_process = "";
     temp = check_copy->readAllStandardOutput();
-    qDebug() << temp;
-    if(temp != ""){
-        qDebug() << "re-re";
+    list_process = temp.split("\n");
+    for(int i = 0; i != list_process.length() - 1; i++){
+        //qDebug() << list_process[i].indexOf("asku-svc");
+        if(list_process[i].indexOf("check_asku_svc") != -1){
+            count_copy_run++;
+        }
     }
 }
