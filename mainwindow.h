@@ -54,9 +54,8 @@ private:
     unsigned short counter;
 
     QStringList list_process;
-    QString asku_svc_process;
     bool flag_file;
-    bool flag_copy;
+    int count_copy_run;
     unsigned short counter_attempt;
 
 public slots:
