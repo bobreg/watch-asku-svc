@@ -72,6 +72,7 @@ MainWindow::MainWindow(QWidget *parent) :
     counter = 0;
     asku_svc_process = "not found";
     flag_file = false;
+    flag_copy = false;
     counter_attempt = 0;
 // создаём форму
     ui->setupUi(this);
@@ -87,6 +88,10 @@ MainWindow::MainWindow(QWidget *parent) :
     if(QFile::exists("/opt/amcs-observer/asku-svc") and QFile::exists("/etc/init.d/asku-svc")){
         flag_file = true;
     }
+// проверка на запуск ещё одной копии
+    check_copy = new QProcess();
+    connect(check_copy, SIGNAL(readyReadStandardOutput()), this, SLOT(copy_is()));
+    check_copy->start("ps -e | grep check_asku_svc");
 }
 
 MainWindow::~MainWindow()
@@ -173,4 +178,13 @@ void MainWindow::ras(){
 
 void MainWindow::show_window(){
     this->show();
+}
+
+void MainWindow::copy_is(){
+    QString temp = "";
+    temp = check_copy->readAllStandardOutput();
+    qDebug() << temp;
+    if(temp != ""){
+        qDebug() << "re-re";
+    }
 }
